@@ -308,13 +308,19 @@ namespace GS1Parser
                 // try to find the index of the group seperator
                 int indexOfGroupTermination = result.IndexOf(GroupSeparator);
                 if (indexOfGroupTermination >= 0)
-                    lengthToRead = indexOfGroupTermination + 1;
+                    lengthToRead = indexOfGroupTermination;
                 // get the data of the current AI till the gorup seperator
                 result = data.Substring(index, lengthToRead);
+
+                // Shift the index to the next
+                index += lengthToRead + 1;
+            }
+            else
+            {
+                // Shift the index to the next
+                index += lengthToRead;
             }
 
-            // Shift the index to the next
-            index += lengthToRead;
             return result;
         }
     }
