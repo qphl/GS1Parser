@@ -188,6 +188,7 @@ namespace GS1Parser
             maxLengthOfAI = aiiDict.Values.Max(el => el.LengthOfAI);
 
         }
+
         /// <summary>
         /// Add an Application Identifier (AI)
         /// </summary>
@@ -210,9 +211,13 @@ namespace GS1Parser
         /// <returns>The different parts of the ean128 code</returns>
         public static Dictionary<AII, string> Parse(string data, bool throwException = false)
         {
-            // cut off the EAN128 start code 
-            if (data.StartsWith(EAN128StartCode))
-                data = data.Substring(EAN128StartCode.Length);
+            if (EAN128StartCode != null)
+            {
+                // cut off the EAN128 start code 
+                if (data.StartsWith(EAN128StartCode))
+                    data = data.Substring(EAN128StartCode.Length);
+            }
+
             // cut off the check sum
             if (HasCheckSum)
                 data = data.Substring(0, data.Length - 2);
@@ -251,6 +256,11 @@ namespace GS1Parser
             // Step through the different lenghts of the AIs
             for (int i = minLengthOfAI; i <= maxLengthOfAI; i++)
             {
+                if (index > data.Length || index + i > data.Length)
+                {
+                    return result;
+                }
+
                 // get the AI sub string
                 string ai = data.Substring(index, i);
                 if (usePlaceHolder)
@@ -279,23 +289,38 @@ namespace GS1Parser
         /// <returns>the data to the current AI</returns>
         private static string GetCode(string data, AII ai, ref int index)
         {
+            var result = string.Empty;
+
             // get the max lenght to read.
-            int lenghtToRead = Math.Min(ai.LengthOfData, data.Length - index);
+            int lengthToRead = Math.Min(ai.LengthOfData, data.Length - index);
+
+            if (index > data.Length || index + lengthToRead > data.Length)
+            {
+                return result;
+            }
+
             // get the data of the current AI
-            string result = data.Substring(index, lenghtToRead);
+            result = data.Substring(index, lengthToRead);
+
             // check if the AI support a group seperator
             if (ai.FNC1)
             {
                 // try to find the index of the group seperator
                 int indexOfGroupTermination = result.IndexOf(GroupSeparator);
                 if (indexOfGroupTermination >= 0)
-                    lenghtToRead = indexOfGroupTermination + 1;
+                    lengthToRead = indexOfGroupTermination;
                 // get the data of the current AI till the gorup seperator
-                result = data.Substring(index, lenghtToRead);
+                result = data.Substring(index, lengthToRead);
+
+                // Shift the index to the next
+                index += lengthToRead + 1;
+            }
+            else
+            {
+                // Shift the index to the next
+                index += lengthToRead;
             }
 
-            // Shift the index to the next
-            index += lenghtToRead;
             return result;
         }
     }
